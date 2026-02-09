@@ -6,6 +6,16 @@ const redis = new Redis({
 });
 
 export default async function handler(req, res) {
-  const ips = await redis.smembers("ip_list");
-  res.status(200).json({ ips });
+  try {
+    const ips = await redis.smembers("ip_list");
+    const total = await redis.get("total_requests");
+
+    res.status(200).json({
+      total_requests: total || 0,
+      total_ips: ips.length,
+      ips
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 }
