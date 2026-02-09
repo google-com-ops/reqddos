@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Live Traffic</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body style="background:#0f172a;color:white;text-align:center;">
+
+<h1>Live Traffic Stats</h1>
+<canvas id="chart"></canvas>
+
+<button id="btn" style="
+position:fixed;
+bottom:20px;
+right:20px;
+padding:10px;
+border-radius:50%;
+">📂</button>
+
+<div id="box" style="
+display:none;
+position:fixed;
+bottom:80px;
+right:20px;
+background:#1e293b;
+padding:10px;
+max-height:300px;
+overflow:auto;
+"></div>
+
+<script>
+const ctx = document.getElementById("chart").getContext("2d");
+
+const data = { labels: [], datasets: [{ label: "Requests", data: [], borderColor: "cyan", tension: 0.3 }] };
+const chart = new Chart(ctx, { type: "line", data });
+
+setInterval(() => {
+  fetch("/api/stats")
+    .then(res => res.json())
+    .then(d => {
+      const now = new Date().toLocaleTimeString();
+      data.labels.push(now);
+      data.datasets[0].data.push(d.total_requests);
+      if (data.labels.length > 15) { data.labels.shift(); data.datasets[0].data.shift(); }
+      chart.update();
+    });
+}, 5000);
+
+document.getElementById("btn").onclick = () => {
+  const box = document.getElementById("box");
+  box.style.display = box.style.display === "none" ? "block" : "none";
+  fetch("/api/ips")
+    .then(res => res.json())
+    .then(d => { box.innerHTML = d.ips.join("<br>"); });
+};
+</script>
+
+</body>
+</html>
