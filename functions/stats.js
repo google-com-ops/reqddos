@@ -6,13 +6,21 @@ const redis = new Redis({
 });
 
 export default async function handler(req, res) {
-  const ip = req.headers["x-forwarded-for"]?.split(",")[0] || req.socket.remoteAddress;
+  try {
+    const ip =
+      req.headers["x-forwarded-for"]?.split(",")[0] ||
+      req.socket?.remoteAddress ||
+      "unknown";
 
-  // Tambah counter total requests
-  const total = await redis.incr("total_requests");
+    const total = await redis.incr("total_requests");
+    await redis.sadd("ip_list", ip);
 
-  // Simpan IP unik
-  await redis.sadd("ip_list", ip);
-
-  res.status(200).json({ total_requests: total, your_ip: ip });
+    res.status(200).json({
+      success: true,
+      total_requests: total,
+      your_ip: ip
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 }
